@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.1'
+
+      - name: Build executable
+        run: |
+          go build -o dummy-server.bin ./cmd
+        env:
+          GOOS: linux
+          GOARCH: amd64
+
+      - name: Simple Test
+        run: |
+          ./dummy-server.bin &
+          sleep 5
+          curl --retry 5 --retry-delay 2 http://localhost:8888/
+          kill $!
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dummy-server
+          path: dummy-server.bin
+          retention-days: 7
